@@ -2,7 +2,7 @@ import numpy as np
 import wave
 import os
 import argparse
-from typing import List
+from typing import List, Generator
 import logging
 from colorama import init, Fore, Style
 
@@ -20,25 +20,28 @@ BASE_FREQUENCY = 100
 FREQUENCY_MULTIPLIER = 10
 DURATION = 0.1
 MAX_INT16 = 32767  # Maximum positive value for a 16-bit signed integer
+CHUNK_SIZE = 1024  # Size of each chunk to read
 
 def generate_frequency(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE, amplitude: float = AMPLITUDE) -> np.ndarray:
     """Generate a sound wave for a given frequency and duration."""
     t = np.linspace(0, duration, int(sample_rate * duration), False)
     return amplitude * np.sin(2 * np.pi * frequency * t)
 
-def read_file_bytes(file_path: str) -> bytes:
-    """Read bytes from a file."""
-    with open(file_path, "rb") as f:
-        return f.read()
+def read_file_in_chunks(file_path: str, chunk_size: int = CHUNK_SIZE) -> Generator[bytes, None, None]:
+    """Generator to read a file in chunks."""
+    with open(file_path, "rb") as file:
+        while chunk := file.read(chunk_size):
+            yield chunk
 
-def process_bytes_to_frequencies(byte_data: bytes, ext_data: bytes) -> List[np.ndarray]:
-    """Generate frequencies based on file bytes and extension bytes."""
+def process_chunk_to_frequencies(chunk: bytes, ext_data: bytes) -> List[np.ndarray]:
+    """Generate frequencies based on a chunk of file bytes and extension bytes."""
     frequencies = []
 
-    for byte in byte_data:
+    for byte in chunk:
         freq = generate_frequency((byte * FREQUENCY_MULTIPLIER) + BASE_FREQUENCY, DURATION)
         frequencies.append(freq)
 
+    # Add extension data frequencies once per chunk (optional)
     for byte in ext_data:
         freq = generate_frequency((byte * FREQUENCY_MULTIPLIER) + BASE_FREQUENCY, DURATION)
         frequencies.append(freq)
@@ -77,14 +80,16 @@ def main() -> None:
     ext = os.path.splitext(file_path)[1]
     ext_byte = bytes(ext, "ascii")
 
-    logger.info(Fore.YELLOW + "Reading bytes from file: %s", file_path)
-    byte_data = read_file_bytes(file_path)
+    logger.info(Fore.YELLOW + "Reading bytes from file in chunks: %s", file_path)
 
-    logger.info(Fore.CYAN + "Generating frequencies from byte data")
-    frequencies = process_bytes_to_frequencies(byte_data, ext_byte)
+    all_frequencies = []
+    for chunk in read_file_in_chunks(file_path):
+        logger.info(Fore.CYAN + "Processing chunk of size %d", len(chunk))
+        frequencies = process_chunk_to_frequencies(chunk, ext_byte)
+        all_frequencies.extend(frequencies)
 
     logger.info(Fore.GREEN + "Writing wave file to: %s", output_path)
-    write_wave_file(output_path, frequencies)
+    write_wave_file(output_path, all_frequencies)
 
     logger.info(Fore.GREEN + "Sound wave successfully written to %s", output_path)
     logger.info(Fore.YELLOW + "Process complete.")
