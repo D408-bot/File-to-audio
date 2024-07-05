@@ -15,7 +15,7 @@ def generate_frequency(frequency, duration, sample_rate=7500 , amplitude=0.5):
     frequencies.append(wave)
 
 
-with open(filename + ext, "rb") as f:
+with open(file, "rb") as f:
     print("Generating sound...")
     byte = f.read()
     #generate frequency based on the bytes of the file
