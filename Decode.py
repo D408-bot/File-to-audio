@@ -2,7 +2,7 @@ import numpy as np
 import scipy.fftpack, os, subprocess
 from pydub import AudioSegment
 
-file = r"Sample/funny_guy.wav"
+file = input("Input file path: ").replace('"','')
 duration = 0.1
 timestamp = 0
 
@@ -14,7 +14,6 @@ extension_lenght = 1
 if ext_audio !=".wav" and ext_audio !=".flac":
     print("converting audio file to wav")
     output_file = filename+".wav"
-
 
     command = [
         'ffmpeg',
@@ -76,6 +75,8 @@ with open(filename, "r+b") as f:
             break
         extension_lenght+=1
     f.close()
+
+
 #write file
 num_of_file = 0
 while True:

@@ -2,7 +2,7 @@ import numpy as np
 import wave, os.path
 
 frequencies = []
-file = r"Sample/funny_guy.png"
+file = input("Input file path: ").replace('"','')
 
 filename, ext = os.path.splitext(file)
 ext_byte = bytes(ext, "ascii")
