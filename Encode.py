@@ -5,6 +5,7 @@ import argparse
 from typing import List, Generator
 import logging
 from colorama import init, Fore, Style
+from tqdm import tqdm
 
 # Initialize colorama for cross-platform colored terminal output
 init(autoreset=True)
@@ -55,7 +56,7 @@ def write_wave_file(output_path: str, frequencies: List[np.ndarray], sample_rate
         wf.setsampwidth(2)
         wf.setframerate(sample_rate)
         
-        for freq in frequencies:
+        for freq in tqdm(frequencies, desc="Writing output file"):
             wave_data = (freq * MAX_INT16).astype(np.int16)
             wf.writeframes(wave_data.tobytes())
 
@@ -80,11 +81,13 @@ def main() -> None:
     ext = os.path.splitext(file_path)[1]
     ext_byte = bytes(ext, "ascii")
 
+    file_size = os.path.getsize(file_path)
+    num_chunks = (file_size + CHUNK_SIZE - 1) // CHUNK_SIZE
+
     logger.info(Fore.YELLOW + "Reading bytes from file in chunks: %s", file_path)
 
     all_frequencies = []
-    for chunk in read_file_in_chunks(file_path):
-        logger.info(Fore.CYAN + "Processing chunk of size %d", len(chunk))
+    for chunk in tqdm(read_file_in_chunks(file_path), total=num_chunks, desc="Processing chunks"):
         frequencies = process_chunk_to_frequencies(chunk, ext_byte)
         all_frequencies.extend(frequencies)
 
