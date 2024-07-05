@@ -1,40 +1,93 @@
 import numpy as np
-import wave, os.path
+import wave
+import os
+import argparse
+from typing import List
+import logging
+from colorama import init, Fore, Style
 
-frequencies = []
-file = r"Sample/funny_guy.png"
+# Initialize colorama for cross-platform colored terminal output
+init(autoreset=True)
 
-filename, ext = os.path.splitext(file)
-ext_byte = bytes(ext, "ascii")
+# Setup logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-def generate_frequency(frequency, duration, sample_rate=7500 , amplitude=0.5):
-    # generate the sound wave
+# Constants
+SAMPLE_RATE = 7500
+AMPLITUDE = 0.5
+BASE_FREQUENCY = 100
+FREQUENCY_MULTIPLIER = 10
+DURATION = 0.1
+MAX_INT16 = 32767  # Maximum positive value for a 16-bit signed integer
+
+def generate_frequency(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE, amplitude: float = AMPLITUDE) -> np.ndarray:
+    """Generate a sound wave for a given frequency and duration."""
     t = np.linspace(0, duration, int(sample_rate * duration), False)
-    wave = amplitude * np.sin(2 * np.pi * frequency * t)
-    
-    frequencies.append(wave)
+    return amplitude * np.sin(2 * np.pi * frequency * t)
 
+def read_file_bytes(file_path: str) -> bytes:
+    """Read bytes from a file."""
+    with open(file_path, "rb") as f:
+        return f.read()
 
-with open(filename + ext, "rb") as f:
-    print("Generating sound...")
-    byte = f.read()
-    #generate frequency based on the bytes of the file
-    for i in range(len(byte)):
-        generate_frequency(((byte[i]*10)+100), 0.1)
-    #generate frequency for extension of file
-    for i in range(len(ext)):
-        generate_frequency((ext_byte[i]*10)+100, 0.1)
+def process_bytes_to_frequencies(byte_data: bytes, ext_data: bytes) -> List[np.ndarray]:
+    """Generate frequencies based on file bytes and extension bytes."""
+    frequencies = []
 
+    for byte in byte_data:
+        freq = generate_frequency((byte * FREQUENCY_MULTIPLIER) + BASE_FREQUENCY, DURATION)
+        frequencies.append(freq)
 
-#write file
-with wave.open(filename+".wav", 'w') as wf:
-    print("Writing file...")
-    wf.setnchannels(1)
-    wf.setsampwidth(2) 
-    wf.setframerate(7500)
+    for byte in ext_data:
+        freq = generate_frequency((byte * FREQUENCY_MULTIPLIER) + BASE_FREQUENCY, DURATION)
+        frequencies.append(freq)
+
+    return frequencies
+
+def write_wave_file(output_path: str, frequencies: List[np.ndarray], sample_rate: int = SAMPLE_RATE) -> None:
+    """Write frequencies to a .wav file."""
+    with wave.open(output_path, 'w') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
         
-    for i in range(len(frequencies)):
+        for freq in frequencies:
+            wave_data = (freq * MAX_INT16).astype(np.int16)
+            wf.writeframes(wave_data.tobytes())
 
-        wave_data = (frequencies[i] * 32767).astype(np.int16)
-        wf.writeframes(wave_data.tobytes())
-    
+def validate_file(file_path: str) -> str:
+    """Validate if the file exists."""
+    if not os.path.exists(file_path):
+        raise argparse.ArgumentTypeError(f"{Fore.RED}Error: {file_path} does not exist")
+    return file_path
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description='Generate sound from file bytes.')
+    parser.add_argument('input', type=validate_file, help='Input file')
+    parser.add_argument('-o', '--output', type=str, help='Output .wav file path')
+    args = parser.parse_args()
+
+    file_path = args.input
+    if args.output:
+        output_path = args.output
+    else:
+        output_path = os.path.splitext(file_path)[0] + ".wav"
+
+    ext = os.path.splitext(file_path)[1]
+    ext_byte = bytes(ext, "ascii")
+
+    logger.info(Fore.YELLOW + "Reading bytes from file: %s", file_path)
+    byte_data = read_file_bytes(file_path)
+
+    logger.info(Fore.CYAN + "Generating frequencies from byte data")
+    frequencies = process_bytes_to_frequencies(byte_data, ext_byte)
+
+    logger.info(Fore.GREEN + "Writing wave file to: %s", output_path)
+    write_wave_file(output_path, frequencies)
+
+    logger.info(Fore.GREEN + "Sound wave successfully written to %s", output_path)
+    logger.info(Fore.YELLOW + "Process complete.")
+
+if __name__ == '__main__':
+    main()
