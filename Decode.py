@@ -2,7 +2,7 @@ import numpy as np
 import scipy.fftpack, os, subprocess
 from pydub import AudioSegment
 
-file = r"Sample/funny_guy.wav"
+file = input("Input file path: ").replace('"','')
 duration = 0.1
 timestamp = 0
 
@@ -14,7 +14,6 @@ extension_lenght = 1
 if ext_audio !=".wav" and ext_audio !=".flac":
     print("converting audio file to wav")
     output_file = filename+".wav"
-
 
     command = [
         'ffmpeg',
@@ -38,7 +37,7 @@ sample_rate = sound.frame_rate
 audio_data = np.array(sound.get_array_of_samples())
 audio_data = audio_data / np.max(np.abs(audio_data))
 
-#get frequency
+# get frequency
 print("Analyzing frequencies...")
 with open(filename, "wb+") as f:
     while True:
@@ -64,7 +63,7 @@ with open(filename, "wb+") as f:
         
         timestamp += duration
     f.close()
-#find the right extension of the file
+# find the right extension of the file
 with open(filename, "r+b") as f:
     filesize = os.path.getsize(filename)
     while True:
@@ -76,7 +75,9 @@ with open(filename, "r+b") as f:
             break
         extension_lenght+=1
     f.close()
-#write file
+
+
+# write file
 num_of_file = 0
 while True:
     try:
@@ -85,3 +86,5 @@ while True:
         break
     except FileExistsError:
         continue
+
+print('\nOUTPUT: ' + os.path.abspath(os.path.join(os.path.dirname(filename), filename + retrieved_extension)))
