@@ -37,7 +37,7 @@ sample_rate = sound.frame_rate
 audio_data = np.array(sound.get_array_of_samples())
 audio_data = audio_data / np.max(np.abs(audio_data))
 
-#get frequency
+# get frequency
 print("Analyzing frequencies...")
 with open(filename, "wb+") as f:
     while True:
@@ -63,7 +63,7 @@ with open(filename, "wb+") as f:
         
         timestamp += duration
     f.close()
-#find the right extension of the file
+# find the right extension of the file
 with open(filename, "r+b") as f:
     filesize = os.path.getsize(filename)
     while True:
@@ -77,7 +77,7 @@ with open(filename, "r+b") as f:
     f.close()
 
 
-#write file
+# write file
 num_of_file = 0
 while True:
     try:
@@ -86,3 +86,5 @@ while True:
         break
     except FileExistsError:
         continue
+
+print('\nOUTPUT: ' + os.path.abspath(os.path.join(os.path.dirname(filename), filename + retrieved_extension)))
