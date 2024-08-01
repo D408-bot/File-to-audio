@@ -1,8 +1,12 @@
 import numpy as np
 import wave, os.path
+import sys
+
+if sys.argv[1] == None:
+    raise ValueError("No argument supplied")
 
 frequencies = []
-file = r"Sample/funny_guy.png"
+file = sys.argv[1]
 
 filename, ext = os.path.splitext(file)
 ext_byte = bytes(ext, "ascii")
