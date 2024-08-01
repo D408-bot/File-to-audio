@@ -2,7 +2,12 @@ import numpy as np
 import scipy.fftpack, os, subprocess
 from pydub import AudioSegment
 
-file = r"Sample/funny_guy.wav"
+import sys
+
+if sys.argv[1] == None:
+    raise ValueError("No argument supplied")
+
+file = sys.argv[1]
 duration = 0.1
 timestamp = 0
 
