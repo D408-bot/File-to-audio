@@ -16,4 +16,4 @@ or
 python Encode.py <YOUR_FILE>
 ```
 
-Same as for the encode
+Same as for the decode
