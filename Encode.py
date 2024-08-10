@@ -6,7 +6,10 @@ if sys.argv[1] == None:
     raise ValueError("No argument supplied")
 
 frequencies = []
-file = sys.argv[1]
+try:
+    file = sys.argv[1]
+except:
+    file = input("Enter file path: ")
 
 filename, ext = os.path.splitext(file)
 ext_byte = bytes(ext, "ascii")
